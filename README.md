@@ -53,7 +53,7 @@ Github_Follow_Unfollow.py
 3. Click "Follow Users" to follow all users on that profile's follower list.
 
 ## License
-This project is licensed under the MIT License.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
 
 ## Disclaimer
 This tool is intended for educational purposes only. Use responsibly and respect GitHub's Terms of Service.
