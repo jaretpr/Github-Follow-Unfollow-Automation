@@ -36,13 +36,13 @@ This tool provides a GUI for automating the process of following or unfollowing 
    ```bash
    Github_Follow_Unfollow.py
 
-3. **Use the Tool**
-**Username/Email:** Enter your GitHub username or email.
-**Password:** Enter your GitHub password.
-**Page URL:** Enter the URL of the GitHub profile whose followers/following you want to interact with (e.g., https://github.com/someuser/followers).
-**Follow Users:** Click this button to follow all users on the specified page.
-**Unfollow Users:** Click this button to unfollow all users on the specified page.
-**Logs:** The tool will display logs of actions performed in the application after the WebDriver session is closed.
+2. **Use the Tool**
+- **Username/Email:** Enter your GitHub username or email.
+- **Password:** Enter your GitHub password.
+- **Page URL:** Enter the URL of the GitHub profile whose followers/following you want to interact with (e.g., https://github.com/someuser/followers).
+- **Follow Users:** Click this button to follow all users on the specified page.
+- **Unfollow Users:** Click this button to unfollow all users on the specified page.
+- **Logs:** The tool will display logs of actions performed in the application after the WebDriver session is closed.
 
 ## Important Notes
 - Non-Responsive Window: When the Selenium WebDriver starts running, the GUI may appear unresponsive because Selenium has taken over control. You can monitor the progress through the logs in the tool.
