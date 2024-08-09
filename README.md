@@ -33,9 +33,10 @@ This tool provides a GUI for automating the process of following or unfollowing 
 
 ## Usage
 1. **Run the Script**
-Github_Follow_Unfollow.py
+   ```bash
+   Github_Follow_Unfollow.py
 
-2. **Use the Tool**
+3. **Use the Tool**
 **Username/Email:** Enter your GitHub username or email.
 **Password:** Enter your GitHub password.
 **Page URL:** Enter the URL of the GitHub profile whose followers/following you want to interact with (e.g., https://github.com/someuser/followers).
