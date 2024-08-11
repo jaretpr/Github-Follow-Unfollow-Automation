@@ -6,6 +6,7 @@ This tool provides a GUI for automating the process of following or unfollowing 
 
 - **Automated GitHub Login**: Log in to your GitHub account with your username and password.
 - **Follow/Unfollow Users**: Follow or unfollow users in bulk from a specified GitHub profile's followers or following list.
+- **Customizable Starting Page:** Specify the page number to start following or unfollowing users.
 - **Headless Mode**: The Selenium WebDriver runs in headless mode, meaning it operates in the background without opening a visible browser window.
 - **Scrollable Log**: View the log of actions performed in the application after the WebDriver session is closed.
 
@@ -40,6 +41,7 @@ This tool provides a GUI for automating the process of following or unfollowing 
 - **Username/Email:** Enter your GitHub username or email.
 - **Password:** Enter your GitHub password.
 - **Page URL:** Enter the URL of the GitHub profile whose followers/following you want to interact with (e.g., https://github.com/someuser/followers).
+- **Starting Page Number:** Enter the page number where you want to start following or unfollowing users.
 - **Follow Users:** Click this button to follow all users on the specified page.
 - **Unfollow Users:** Click this button to unfollow all users on the specified page.
 - **Logs:** The tool will display logs of actions performed in the application after the WebDriver session is closed.
@@ -51,7 +53,8 @@ This tool provides a GUI for automating the process of following or unfollowing 
 ## Example
 1. Enter your GitHub credentials.
 2. Provide a profile URL like https://github.com/someuser/followers.
-3. Click "Follow Users" to follow all users on that profile's follower list.
+3. Enter the starting page number where you want to begin the process.
+4. Click "Follow Users" to follow all users on that profile's follower list.
 
 ## License
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
