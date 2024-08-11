@@ -47,7 +47,6 @@ def github_login(username, password):
     time.sleep(5)  # Allow time for redirection
     print("Current URL after login:", driver.current_url)
     
-    # Alternative wait: Check if URL contains the dashboard page path
     try:
         wait.until(EC.url_contains("github.com/"))
         print("Login successful, now on the GitHub home/dashboard page.")
@@ -59,7 +58,12 @@ def github_login(username, password):
 
 # Generic function to handle following/unfollowing users across multiple pages
 def handle_buttons(page_url, action):
-    page_number = 1
+    try:
+        page_number = int(page_number_entry.get().strip())  # Get starting page number from user input
+    except ValueError:
+        log_widget.insert(tk.END, "Invalid page number. Please enter a valid number.\n")
+        return
+    
     while True:
         current_page_url = f"{page_url}&page={page_number}"
         driver.get(current_page_url)
@@ -99,9 +103,7 @@ def handle_buttons(page_url, action):
                 try:
                     # Scroll to the button to ensure it is visible
                     driver.execute_script("arguments[0].scrollIntoView(true);", button)
-                    # Wait for the button to be clickable
                     wait.until(EC.element_to_be_clickable(button))
-                    # Click the button
                     button.click()
                     log_widget.insert(tk.END, f"Clicked button {i + 1} on page {page_number}: {button.get_attribute('aria-label')}\n")
                     time.sleep(1)  # Adjust the delay as needed
@@ -121,7 +123,6 @@ def handle_buttons(page_url, action):
 
 # Function to start the follow/unfollow process based on user input
 def start_process(action):
-    # Initialize the WebDriver when the user clicks the button
     initialize_webdriver()
     
     username = username_entry.get().strip()
@@ -133,12 +134,8 @@ def start_process(action):
         return
     
     try:
-        # Perform login
         github_login(username, password)
-        
-        # Handle follow/unfollow process
         handle_buttons(page_url, action)
-
     finally:
         driver.quit()
         log_widget.insert(tk.END, "Process completed. WebDriver closed.\n")
@@ -146,7 +143,7 @@ def start_process(action):
 # GUI setup and button bindings
 root = tk.Tk()
 root.title("GitHub Follow/Unfollow Automation")
-root.geometry("635x500")  # Window size
+root.geometry("635x550")  # Increased window size for new input field
 root.configure(bg='#2d2d30')
 
 # Layout management
@@ -178,24 +175,31 @@ url_label.grid(row=3, column=0, pady=5, padx=10, sticky="e")
 url_entry = tk.Entry(frame, font=("Arial", 12), width=40)
 url_entry.grid(row=3, column=1, pady=5, padx=10, sticky="w", ipady=5, ipadx=5)
 
+# Page Number Entry
+page_number_label = tk.Label(frame, text="Starting Page Number:", font=("Arial", 12), fg="white", bg="#2d2d30")
+page_number_label.grid(row=4, column=0, pady=5, padx=10, sticky="e")
+
+page_number_entry = tk.Entry(frame, font=("Arial", 12), width=40)
+page_number_entry.grid(row=4, column=1, pady=5, padx=10, sticky="w", ipady=5, ipadx=5)
+
 # Button styles with light red color
 button_style = {"font": ("Arial", 12), "padx": 5, "pady": 5, "bg": "#eb3a34", "fg": "white", "relief": tk.RAISED, "borderwidth": 2}
 
 # Follow and Unfollow buttons
 btn_follow = tk.Button(frame, text="Follow Users", command=lambda: start_process("follow"), **button_style)
-btn_follow.grid(row=4, column=0, columnspan=2, pady=5, padx=10, sticky="ew")
+btn_follow.grid(row=5, column=0, columnspan=2, pady=5, padx=10, sticky="ew")
 
 btn_unfollow = tk.Button(frame, text="Unfollow Users", command=lambda: start_process("unfollow"), **button_style)
-btn_unfollow.grid(row=5, column=0, columnspan=2, pady=5, padx=10, sticky="ew")
+btn_unfollow.grid(row=6, column=0, columnspan=2, pady=5, padx=10, sticky="ew")
 
 # Log area
 log_widget = scrolledtext.ScrolledText(frame, wrap=tk.WORD, height=10, font=("Arial", 10), bg="#1e1e1e", fg="white", borderwidth=2, relief=tk.RAISED)
-log_widget.grid(row=6, column=0, columnspan=2, pady=5, padx=5, sticky="nsew")
+log_widget.grid(row=7, column=0, columnspan=2, pady=5, padx=5, sticky="nsew")
 
 # Prevent unwanted resizing
 frame.grid_columnconfigure(0, weight=1)
 frame.grid_columnconfigure(1, weight=1)
-frame.grid_rowconfigure(6, weight=1)
+frame.grid_rowconfigure(7, weight=1)
 
 # Start the GUI event loop
 root.mainloop()
