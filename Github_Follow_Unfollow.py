@@ -1,5 +1,5 @@
-import tkinter as tk
-from tkinter import scrolledtext
+import customtkinter as ctk
+import threading
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -8,8 +8,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
 
-# Global variable for WebDriver (initialized only when needed)
+# Global variables
 driver = None
+lock = threading.Lock()  # Thread lock to manage access to shared resources
 
 # Function to initialize the WebDriver (Chrome)
 def initialize_webdriver():
@@ -26,177 +27,167 @@ def initialize_webdriver():
 
 # Function to handle the GitHub login
 def github_login(username, password):
-    driver.get("https://github.com/login")
-    
-    # Wait for the login page to load and locate the username and password fields
-    wait = WebDriverWait(driver, 20)
-    
-    # Enter username
-    username_field = wait.until(EC.presence_of_element_located((By.ID, "login_field")))
-    username_field.send_keys(username)
-    
-    # Enter password
-    password_field = wait.until(EC.presence_of_element_located((By.ID, "password")))
-    password_field.send_keys(password)
-    
-    # Click the "Sign in" button
-    sign_in_button = wait.until(EC.element_to_be_clickable((By.NAME, "commit")))
-    sign_in_button.click()
-    
-    # Debugging: Print current URL to verify successful login
-    time.sleep(5)  # Allow time for redirection
-    print("Current URL after login:", driver.current_url)
-    
-    try:
-        wait.until(EC.url_contains("github.com/"))
-        print("Login successful, now on the GitHub home/dashboard page.")
-        log_widget.insert(tk.END, "Login successful.\n")
-    except:
-        print("Login might not be successful. Current URL:", driver.current_url)
-        log_widget.insert(tk.END, "Login might not be successful. Check credentials.\n")
-        raise
+    with lock:
+        driver.get("https://github.com/login")
+        
+        wait = WebDriverWait(driver, 20)
+        username_field = wait.until(EC.presence_of_element_located((By.ID, "login_field")))
+        username_field.send_keys(username)
+        
+        password_field = wait.until(EC.presence_of_element_located((By.ID, "password")))
+        password_field.send_keys(password)
+        
+        sign_in_button = wait.until(EC.element_to_be_clickable((By.NAME, "commit")))
+        sign_in_button.click()
+        
+        time.sleep(5)
+        
+        try:
+            wait.until(EC.url_contains("github.com/"))
+            log_widget.insert(ctk.END, "Login successful.\n")
+        except:
+            log_widget.insert(ctk.END, "Login might not be successful. Check credentials.\n")
+            raise
 
 # Generic function to handle following/unfollowing users across multiple pages
 def handle_buttons(page_url, action):
-    try:
-        page_number = int(page_number_entry.get().strip())  # Get starting page number from user input
-    except ValueError:
-        log_widget.insert(tk.END, "Invalid page number. Please enter a valid number.\n")
-        return
-    
-    while True:
-        current_page_url = f"{page_url}&page={page_number}"
-        driver.get(current_page_url)
-        
-        wait = WebDriverWait(driver, 10)  # Adjust the timeout as needed
+    with lock:
         try:
-            # Check if the "You can't perform that action at this time." popup appears
+            page_number = int(page_number_entry.get().strip())  # Get starting page number from user input
+        except ValueError:
+            log_widget.insert(ctk.END, "Invalid page number. Please enter a valid number.\n")
+            return
+        
+        while True:
+            current_page_url = f"{page_url}&page={page_number}"
+            driver.get(current_page_url)
+            
+            wait = WebDriverWait(driver, 10)  # Adjust the timeout as needed
             try:
-                popup = wait.until(EC.presence_of_element_located(
-                    (By.XPATH, "//div[@class='flash flash-full flash-error ']//div[contains(text(), \"You can't perform that action at this time.\")]")
-                ))
-                if popup:
-                    log_widget.insert(tk.END, "Action limit reached. Closing WebDriver.\n")
-                    driver.quit()  # Close the WebDriver
-                    return False  # Exit the function
-            except:
-                pass  # Continue if the popup is not found
+                try:
+                    popup = wait.until(EC.presence_of_element_located(
+                        (By.XPATH, "//div[@class='flash flash-full flash-error ']//div[contains(text(), \"You can't perform that action at this time.\")]")
+                    ))
+                    if popup:
+                        log_widget.insert(ctk.END, "Action limit reached. Closing WebDriver.\n")
+                        driver.quit()
+                        return False
+                except:
+                    pass
 
-            if action == "follow":
-                # Look for Follow buttons
-                buttons = wait.until(EC.presence_of_all_elements_located(
-                    (By.CSS_SELECTOR, "input.btn.btn-sm[aria-label^='Follow']")
-                ))
-            else:
-                # Look for Unfollow buttons
-                buttons = wait.until(EC.presence_of_all_elements_located(
-                    (By.CSS_SELECTOR, "input.btn.btn-sm[aria-label^='Unfollow']")
-                ))
+                if action == "follow":
+                    buttons = wait.until(EC.presence_of_all_elements_located(
+                        (By.CSS_SELECTOR, "input.btn.btn-sm[aria-label^='Follow']")
+                    ))
+                else:
+                    buttons = wait.until(EC.presence_of_all_elements_located(
+                        (By.CSS_SELECTOR, "input.btn.btn-sm[aria-label^='Unfollow']")
+                    ))
 
-            # If no buttons are found, assume we are done with all pages
-            if not buttons:
-                log_widget.insert(tk.END, f"No more {action} buttons found on page {page_number}. Stopping.\n")
+                if not buttons:
+                    log_widget.insert(ctk.END, f"No more {action} buttons found on page {page_number}. Stopping.\n")
+                    break
+
+                for i, button in enumerate(buttons):
+                    try:
+                        driver.execute_script("arguments[0].scrollIntoView(true);", button)
+                        wait.until(EC.element_to_be_clickable(button))
+                        button.click()
+                        log_widget.insert(ctk.END, f"Clicked button {i + 1} on page {page_number}: {button.get_attribute('aria-label')}\n")
+                        time.sleep(1)
+                    except Exception as e:
+                        log_widget.insert(ctk.END, f"Failed to click button {i + 1} on page {page_number}: {e}\n")
+                        break
+                
+                log_widget.insert(ctk.END, f"Completed {action} actions on page {page_number}.\n")
+                page_number += 1
+
+            except Exception as e:
+                log_widget.insert(ctk.END, f"Error occurred: {e}\n")
                 break
 
-            # Click each button one by one
-            for i, button in enumerate(buttons):
-                try:
-                    # Scroll to the button to ensure it is visible
-                    driver.execute_script("arguments[0].scrollIntoView(true);", button)
-                    wait.until(EC.element_to_be_clickable(button))
-                    button.click()
-                    log_widget.insert(tk.END, f"Clicked button {i + 1} on page {page_number}: {button.get_attribute('aria-label')}\n")
-                    time.sleep(1)  # Adjust the delay as needed
-                except Exception as e:
-                    log_widget.insert(tk.END, f"Failed to click button {i + 1} on page {page_number}: {e}\n")
-                    break
-            
-            log_widget.insert(tk.END, f"Completed {action} actions on page {page_number}.\n")
-            page_number += 1  # Move to the next page
-            
-        except Exception as e:
-            print(f"Error on the page: {e}")
-            log_widget.insert(tk.END, f"Error occurred: {e}\n")
-            break
-
-    return True
+        return True
 
 # Function to start the follow/unfollow process based on user input
 def start_process(action):
-    initialize_webdriver()
-    
-    username = username_entry.get().strip()
-    password = password_entry.get().strip()
-    page_url = url_entry.get().strip()
-    
-    if not username or not password or not page_url:
-        log_widget.insert(tk.END, "Please enter all required fields: Username, Password, and URL.\n")
-        return
-    
-    try:
-        github_login(username, password)
-        handle_buttons(page_url, action)
-    finally:
-        driver.quit()
-        log_widget.insert(tk.END, "Process completed. WebDriver closed.\n")
+    threading.Thread(target=run_process, args=(action,)).start()
 
-# GUI setup and button bindings
-root = tk.Tk()
+def run_process(action):
+    with lock:
+        initialize_webdriver()
+        username = username_entry.get().strip()
+        password = password_entry.get().strip()
+        page_url = url_entry.get().strip()
+        
+        if not username or not password or not page_url:
+            log_widget.insert(ctk.END, "Please enter all required fields: Username, Password, and URL.\n")
+            return
+        
+        try:
+            github_login(username, password)
+            handle_buttons(page_url, action)
+        finally:
+            driver.quit()
+            log_widget.insert(ctk.END, "Process completed. WebDriver closed.\n")
+
+# GUI setup and button bindings using customtkinter
+import customtkinter as ctk
+
+ctk.set_appearance_mode("Dark")
+ctk.set_default_color_theme("blue")
+
+root = ctk.CTk()
 root.title("GitHub Follow/Unfollow Automation")
-root.geometry("635x550")  # Increased window size for new input field
-root.configure(bg='#2d2d30')
+root.geometry("635x600")
 
-# Layout management
-frame = tk.Frame(root, padx=20, pady=20, bg='#2d2d30')
-frame.pack(expand=True, fill=tk.BOTH)
+# Frame for content
+frame = ctk.CTkFrame(root)
+frame.pack(expand=True, fill=ctk.BOTH, padx=20, pady=20)
 
-# Label
-title_label = tk.Label(frame, text="GitHub Follow/Unfollow Automation", font=("Arial", 16, "bold"), fg="white", bg="#2d2d30")
+# Title Label
+title_label = ctk.CTkLabel(frame, text="GitHub Follow/Unfollow Automation", font=ctk.CTkFont(size=20, weight="bold"))
 title_label.grid(row=0, column=0, columnspan=2, pady=10, sticky="n")
 
 # Username Entry
-username_label = tk.Label(frame, text="Username/Email:", font=("Arial", 12), fg="white", bg="#2d2d30")
+username_label = ctk.CTkLabel(frame, text="Username/Email:", font=ctk.CTkFont(size=14))
 username_label.grid(row=1, column=0, pady=5, padx=10, sticky="e")
 
-username_entry = tk.Entry(frame, font=("Arial", 12), width=40)
-username_entry.grid(row=1, column=1, pady=5, padx=10, sticky="w", ipady=5, ipadx=5)
+username_entry = ctk.CTkEntry(frame, width=400)
+username_entry.grid(row=1, column=1, pady=5, padx=10, sticky="w")
 
 # Password Entry
-password_label = tk.Label(frame, text="Password:", font=("Arial", 12), fg="white", bg='#2d2d30')
+password_label = ctk.CTkLabel(frame, text="Password:", font=ctk.CTkFont(size=14))
 password_label.grid(row=2, column=0, pady=5, padx=10, sticky="e")
 
-password_entry = tk.Entry(frame, font=("Arial", 12), width=40, show="*")
-password_entry.grid(row=2, column=1, pady=5, padx=10, sticky="w", ipady=5, ipadx=5)
+password_entry = ctk.CTkEntry(frame, show="*", width=400)
+password_entry.grid(row=2, column=1, pady=5, padx=10, sticky="w")
 
 # URL Entry
-url_label = tk.Label(frame, text="Page URL:", font=("Arial", 12), fg="white", bg="#2d2d30")
+url_label = ctk.CTkLabel(frame, text="Page URL:", font=ctk.CTkFont(size=14))
 url_label.grid(row=3, column=0, pady=5, padx=10, sticky="e")
 
-url_entry = tk.Entry(frame, font=("Arial", 12), width=40)
-url_entry.grid(row=3, column=1, pady=5, padx=10, sticky="w", ipady=5, ipadx=5)
+url_entry = ctk.CTkEntry(frame, width=400)
+url_entry.grid(row=3, column=1, pady=5, padx=10, sticky="w")
 
 # Page Number Entry
-page_number_label = tk.Label(frame, text="Starting Page Number:", font=("Arial", 12), fg="white", bg="#2d2d30")
+page_number_label = ctk.CTkLabel(frame, text="Starting Page Number:", font=ctk.CTkFont(size=14))
 page_number_label.grid(row=4, column=0, pady=5, padx=10, sticky="e")
 
-page_number_entry = tk.Entry(frame, font=("Arial", 12), width=40)
-page_number_entry.grid(row=4, column=1, pady=5, padx=10, sticky="w", ipady=5, ipadx=5)
+page_number_entry = ctk.CTkEntry(frame, width=400)
+page_number_entry.grid(row=4, column=1, pady=5, padx=10, sticky="w")
 
-# Button styles with light red color
-button_style = {"font": ("Arial", 12), "padx": 5, "pady": 5, "bg": "#eb3a34", "fg": "white", "relief": tk.RAISED, "borderwidth": 2}
+# Follow and Unfollow buttons with custom colors
+btn_follow = ctk.CTkButton(frame, text="Follow Users", command=lambda: start_process("follow"), fg_color="#997cc4", hover_color="#6e4ca1")
+btn_follow.grid(row=5, column=0, columnspan=2, pady=10, padx=10, sticky="ew")
 
-# Follow and Unfollow buttons
-btn_follow = tk.Button(frame, text="Follow Users", command=lambda: start_process("follow"), **button_style)
-btn_follow.grid(row=5, column=0, columnspan=2, pady=5, padx=10, sticky="ew")
-
-btn_unfollow = tk.Button(frame, text="Unfollow Users", command=lambda: start_process("unfollow"), **button_style)
-btn_unfollow.grid(row=6, column=0, columnspan=2, pady=5, padx=10, sticky="ew")
+btn_unfollow = ctk.CTkButton(frame, text="Unfollow Users", command=lambda: start_process("unfollow"), fg_color="#997cc4", hover_color="#6e4ca1")
+btn_unfollow.grid(row=6, column=0, columnspan=2, pady=10, padx=10, sticky="ew")
 
 # Log area
-log_widget = scrolledtext.ScrolledText(frame, wrap=tk.WORD, height=10, font=("Arial", 10), bg="#1e1e1e", fg="white", borderwidth=2, relief=tk.RAISED)
-log_widget.grid(row=7, column=0, columnspan=2, pady=5, padx=5, sticky="nsew")
+log_widget = ctk.CTkTextbox(frame, wrap="word", height=10)
+log_widget.grid(row=7, column=0, columnspan=2, pady=10, padx=10, sticky="nsew")
 
-# Prevent unwanted resizing
+# Adjust the grid configuration
 frame.grid_columnconfigure(0, weight=1)
 frame.grid_columnconfigure(1, weight=1)
 frame.grid_rowconfigure(7, weight=1)
