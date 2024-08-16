@@ -59,5 +59,8 @@ This tool provides a GUI for automating the process of following or unfollowing 
 ## License
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
 
+## Screenshots
+![Git_UI](pics/Git_UI.png)
+
 ## Legal Disclaimer
 This tool is intended for educational purposes only. By using this tool, you agree to comply with GitHub's [Terms of Service](https://docs.github.com/en/site-policy/github-terms/github-terms-of-service). The authors are not responsible for any misuse of this tool or any consequences arising from its use.
