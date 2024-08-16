@@ -8,7 +8,7 @@ This tool provides a GUI for automating the process of following or unfollowing 
 - **Follow/Unfollow Users**: Follow or unfollow users in bulk from a specified GitHub profile's followers or following list.
 - **Customizable Starting Page:** Specify the page number to start following or unfollowing users.
 - **Headless Mode**: The Selenium WebDriver runs in headless mode, meaning it operates in the background without opening a visible browser window.
-- **Scrollable Log**: View the log of actions performed in the application after the WebDriver session is closed.
+- **Scrollable Log**: View the log of actions performed in the application.
 
 ## Prerequisites
 
@@ -44,10 +44,9 @@ This tool provides a GUI for automating the process of following or unfollowing 
 - **Starting Page Number:** Enter the page number where you want to start following or unfollowing users.
 - **Follow Users:** Click this button to follow all users on the specified page.
 - **Unfollow Users:** Click this button to unfollow all users on the specified page.
-- **Logs:** The tool will display logs of actions performed in the application after the WebDriver session is closed.
+- **Logs:** The tool will display logs of actions performed in the application.
 
 ## Important Notes
-- Non-Responsive Window: When the Selenium WebDriver starts running, the GUI may appear unresponsive because Selenium has taken over control. You can monitor the progress through the logs in the tool.
 - Rate Limiting: GitHub may temporarily block actions if you perform too many in a short period. The tool will handle this by stopping the process if a limit is reached.
 
 ## Example
